@@ -1,10 +1,8 @@
-(function() {
-  'use strict';
-
+(function () {
   // async calling a function
   // `setImmediate` or `function(fn) { setTimeout(fn, 0) }` in browser
   // `process.nextTick` in node
-  var asyncCall = process.nextTick;
+  const asyncCall = process.nextTick;
 
   // 2.3
   // The Promise Resolution Procedure
@@ -24,7 +22,7 @@
       // or multiple calls to the same argument are made,
       // the first call takes precedence,
       // and any further calls are ignored.
-      var called = false,
+      let called = false,
         then;
 
       try {
@@ -38,7 +36,7 @@
           // call it with x as this,
           // first argument resolvePromise,
           // and second argument rejectPromise,
-          then.call(x, function(y) {
+          then.call(x, (y) => {
             // 2.3.3.3.1
             // If/when resolvePromise is called with a value y,
             // run [[Resolve]](promise, y).
@@ -46,7 +44,7 @@
               called = true;
               resolve(promise, y);
             }
-          }, function(r) {
+          }, (r) => {
             // 2.3.3.3.2
             // If/when rejectPromise is called with a reason r,
             // reject promise with r.
@@ -55,13 +53,13 @@
               promise.reject(r);
             }
           });
-        }else {
+        } else {
           // 2.3.3.4
           // If then is not a function,
           // fulfill promise with x.
           promise.fulfill(x);
         }
-      }catch (e) {
+      } catch (e) {
         // 2.3.3.2
         // If retrieving the property x.then results in a thrown exception e,
         // reject promise with e as the reason.
@@ -70,7 +68,7 @@
           promise.reject(e);
         }
       }
-    }else {
+    } else {
       // 2.3.4
       // If x is not an object or function,
       // fulfill promise with x.
@@ -78,36 +76,36 @@
     }
   }
 
-  function Taxi() {
+  function Pledge() {
     // 0 pending, 1 fulfilled, 2 rejected
-    var _state = 0,
+    let _state = 0,
       _value,
       _onFulfills = [],
       _onRejects = [];
-    this.done = function(onFulfilled, onRejected) {
+    this.done = function (onFulfilled, onRejected) {
       if (_state === 0) {
         _onFulfills.push(onFulfilled);
         _onRejects.push(onRejected);
-      }else {
-        asyncCall(function() {
+      } else {
+        asyncCall(() => {
           if (_state === 1) {
             if (typeof onFulfilled === 'function') {
               onFulfilled(_value);
             }
-          }else if (typeof onRejected === 'function') {
+          } else if (typeof onRejected === 'function') {
             onRejected(_value);
           }
         });
       }
     };
 
-    function _complete(state, value){
+    function _complete(state, value) {
       if (!_state) {
         _state = state;
         _value = value;
-        asyncCall(function() {
-          var handlers = state == 1 ? _onFulfills : _onRejects;
-          handlers.forEach(function(fn) {
+        asyncCall(() => {
+          const handlers = state == 1 ? _onFulfills : _onRejects;
+          handlers.forEach((fn) => {
             if (typeof fn === 'function') {
               fn(value);
             }
@@ -118,23 +116,23 @@
       }
     }
 
-    this.fulfill = function(value) {
+    this.fulfill = function (value) {
       _complete(1, value);
     };
-    this.reject = function(value) {
+    this.reject = function (value) {
       _complete(2, value);
     };
   }
 
-  Taxi.prototype = {
-    constructor: Taxi,
-    catch: function(onRejected) {
+  Pledge.prototype = {
+    constructor: Pledge,
+    catch(onRejected) {
       this.then(null, onRejected);
     },
-    then: function(onFulfilled, onRejected) {
+    then(onFulfilled, onRejected) {
       // 2.2.7
       // then must return a promise
-      var taxi = new Taxi();
+      const pledge = new Pledge();
 
       // 2.2.2
       // If onFulfilled is a function:
@@ -146,51 +144,51 @@
       // 2.2.3.1
       // it must be called after promise is rejected,
       // with promise’s reason as its first argument.
-      this.done(function(x) {
+      this.done((x) => {
         if (typeof onFulfilled === 'function') {
           try {
             // 2.2.7.1
             // If either onFulfilled or onRejected returns a value x,
             // run the Promise Resolution Procedure [[Resolve]](promise2, x).
-            resolve(taxi, onFulfilled(x));
-          }catch (e) {
+            resolve(pledge, onFulfilled(x));
+          } catch (e) {
             // 2.2.7.2
             // If either onFulfilled or onRejected throws an exception e,
             // promise2 must be rejected with e as the reason.
-            taxi.reject(e);
+            pledge.reject(e);
           }
-        }else {
+        } else {
           // 2.2.1.1
           // If onFulfilled is not a function, it must be ignored.
           // 2.2.7.3
-          // If onFulfilled is not a function and promise1 is fulfilled, 
+          // If onFulfilled is not a function and promise1 is fulfilled,
           // promise2 must be fulfilled with the same value as promise1.
-          taxi.fulfill(x);
+          pledge.fulfill(x);
         }
-      }, function(x) {
+      }, (x) => {
         if (typeof onRejected === 'function') {
           try {
             // 2.2.7.1
             // If either onFulfilled or onRejected returns a value x,
             // run the Promise Resolution Procedure [[Resolve]](promise2, x).
-            resolve(taxi, onRejected(x));
-          }catch (e) {
+            resolve(pledge, onRejected(x));
+          } catch (e) {
             // 2.2.7.2
             // If either onFulfilled or onRejected throws an exception e,
             // promise2 must be rejected with e as the reason.
-            taxi.reject(e);
+            pledge.reject(e);
           }
-        }else {
+        } else {
           // 2.2.1.2
           // If onRejected is not a function, it must be ignored.
           // 2.2.7.4
-          // If onRejected is not a function and promise1 is rejected, 
+          // If onRejected is not a function and promise1 is rejected,
           // promise2 must be rejected with the same reason as promise1.
-          taxi.reject(x);
+          pledge.reject(x);
         }
       });
-      return taxi;
-    }
+      return pledge;
+    },
   };
-  module.exports = Taxi;
+  module.exports = Pledge;
 }());
