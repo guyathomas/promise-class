@@ -4,12 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test"
+    "test": "mocha test",
+    "test-full": "promises-aplus-tests ./test/adapter"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "assert": "^1.4.1",
+    "lodash": "^4.17.10",
     "mocha": "^5.1.1",
     "promises-aplus-tests": "^2.1.2",
     "sinon": "^5.0.7"
